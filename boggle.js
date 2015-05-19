@@ -11,6 +11,25 @@ var readline = require('readline'),
       output: process.stdout
     });
 //game
+function makeBoard(size){
+  var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      area = size * size,
+      board = [],
+      row = [],
+      rand;
+
+  for (var i = 0; i < area; i++) {
+    rand = Math.floor(Math.random() * alpha.length);
+    row.push(alpha[rand]);
+    if (size % (i + 1) === 0)
+      console.log(row.join(' '));
+      board.push(row);
+      row = [];
+  };
+
+    return board;
+};
+
 function boggle() {
   var i, j, row,
       alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
