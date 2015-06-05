@@ -1,47 +1,35 @@
-var readline = require('readline'),
-    fs = require('fs'),
-    Trie = require('./trie.js'),
-    _ = require('lodash'),
-    //creates trie from wordlist
-    text = fs.readFileSync('wordlist.txt', 'utf8'),
-    text = text.replace(/\r/g, '').split('\n'),
-    trie = new Trie(text),
-    rl = readline.createInterface({
+var readline = require('readline');
+var fs = require('fs');
+var Trie = require('./trie.js');
+var _ = require('lodash');
+//creates trie from wordlist
+var text = fs.readFileSync('wordlist.txt', 'utf8').replace(/\r/g, '').split('\n');
+var trie = new Trie(text);
+var rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
+
 //game
 function makeBoard(size){
-  var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      area = size * size,
-      board = [],
-      row = [],
-      rand;
+  var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var board = [];
+  var row;
 
-  for (var i = 0; i < area; i++) {
-    rand = Math.floor(Math.random() * alpha.length);
-    row.push(alpha[rand]);
-    if (size % (i + 1) === 0)
-      console.log(row.join(' '));
-      board.push(row);
-      row = [];
-  };
-
-    return board;
-};
-
-function boggle() {
-  var i, j, row,
-      alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      board = [];
-  for (i = 0; i < 4; i++) {
+  for (var i = 0; i < size; i++) {
     row = [];
-    for (j = 0; j < 4; j++) {
+    for (var j = 0; j < size; j++) {
       row[j] = alpha[Math.floor(Math.random() * 26)];
     }
     console.log(row.join(' '));
     board.push(row);
   }
+
+    return board;
+};
+
+function boggle() {
+  var board = makeBoard(4);
 
   rl.question('What next? (n = new board, q = quit, s = solve)', function(answer) {
     if (answer == 'n') {
@@ -76,36 +64,56 @@ function startQueue(text) {
 }
 
 
-function findWords(queue, board) {
-  var current, currentX, currentY, currentPre, modX, modY, next, i, r,
-      wordsFound = [],
-      workQueue = queue,
-      modArray = [[1, 0], [0, 1], [-1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
+function findWords(board) {
+    var wordsFound = [];
+    var workQueue = [];
+    var modArray = [[1, 0], [0, 1], [-1, 0], [0, -1],
+      [-1, -1], [1, -1], [-1, 1], [1, 1]];
+    var x;
+    var y;
+    var lastLocation;
+    var currentPre;
+    var newPre;
+    var unseenLocation;
+
+    for (var i = 0; i < board.length; i++) {
+      for (var j = 0; j < board[i].length; j++) {
+        newPre = {
+          prefix: board[i][j],
+          lastLocation: [i, j],
+          locations:{}
+        };
+        newPre.locations[i] = {};
+        newPre.locations[i][j] = true;
+        workQueue.push(newPre);
+      };
+    };
+
   while (workQueue.length) {
     current = workQueue.shift();
-    currentX = current.location[0];
-    currentY = current.location[1];
     currentPre = current.prefix;
-    if (trie.isWord(currentPre) && currentPre.length > 2) {
+
+    if (currentPre.length > 2 && trie.isWord(currentPre)) {
       wordsFound.push(currentPre);
     }
+
     //loops through letters in all directions if current is prefix
-    if (trie.isPrefix(currentPre)) {
-      for (i = 0; i < modArray.length; i++) {
-        modX = modArray[i][0];
-        modY = modArray[i][1];
-        if (board[currentX + modX] && board[currentX + modX][currentY + modY] &&
-            !([currentX + modX, currentY + modY] in current.locations)) {
-          //creates new object for letter plus neighbor
-          next = {
-            prefix: currentPre + board[currentX + modX][currentY + modY],
-            location: [currentX + modX, currentY + modY],
-            locations: {}
-          };
-          next.locations = _.clone(current.locations);
-          next.locations[next.location] = next.location;
-          workQueue.push(next);
-        }
+    for (i = 0; i < modArray.length; i++) {
+      x = current.lastLocation[0] + modArray[i][0];
+      y = current.lastLocation[1] + modArray[i][1];
+      unseenLocation = !(current.locations[x] && current.locations[x][y]);
+      //console.log('UNSEEN?', unseenLocation)
+      if (board[x] && board[x][y] && unseenLocation && trie.isPrefix(currentPre + board[x][y])) {
+        //creates new object for letter plus neighbor
+
+        newPre = {
+          prefix: currentPre + board[x][y],
+          lastLocation: [x, y],
+          locations: _.clone(current.locations)
+        };
+        if (!newPre.locations[x]) newPre.locations[x] = {};
+        newPre.locations[x][y] = true;
+        workQueue.push(newPre);
       }
     }
   }
@@ -114,8 +122,7 @@ function findWords(queue, board) {
 
 //lists all unique words found in board
 function solve(board) {
-  var workQueue = startQueue(board),
-      wordsFound = findWords(workQueue, board);
+  var wordsFound = findWords(board);
   return _.uniq(wordsFound);
 }
 
