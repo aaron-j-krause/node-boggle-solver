@@ -1,48 +1,56 @@
 //takes wordlist as array
 var Trie = function(wordlist) {
-  var dict = (function (wordlist) {
-    var i,
-        d = {};
-    for (i in wordlist) {
-      d[wordlist[i]] = true;
+  this.wordlist = (function (wordlist) {
+    var dict = {};
+
+    for (var i = 0; i < wordlist.length; i++) {
+      dict[wordlist[i]] = true;
     }
-    return d;
-  })(wordlist),
-  trie = (function(wordlist) {
-    var currentLeaf, currentWord, currentLetter, i, j,
-    t = {};
-    for (i = 0, length = wordlist.length; i < length; i++) {
-      currentWord = wordlist[i];
-      currentLeaf = t;
-      for (j = 0, len = wordlist[i].length; j < len; j++) {
-        currentLetter = currentWord.charAt(j);
-        if (!(currentLetter in currentLeaf)) {
-          currentLeaf[currentLetter] = {};
-        }
-        currentLeaf = currentLeaf[currentLetter];
-      }
-    }
-    return t;
+
+    return dict;
   })(wordlist);
 
-  return {
-    isPrefix: function(string) {
-      var currentLetter, i,
-          currentLeaf = trie;
-      for (i = 0; i < string.length; i++) {
-        currentLetter = string[i];
-        if (!(currentLetter in currentLeaf)) {
-          return false;
+  this.tree = (function(wordlist) {
+    var currentLeaf;
+    var currentWord;
+    var currentLetter;
+    var trie = {};
+
+    for (var i = 0; i < wordlist.length; i++) {
+      currentWord = wordlist[i];
+      currentLeaf = trie;
+
+      for (var j = 0; j < currentWord.length; j++) {
+        currentLetter = currentWord.charAt(j);
+        if (!currentLeaf[currentLetter]) {
+          currentLeaf[currentLetter] = {};
         }
+
         currentLeaf = currentLeaf[currentLetter];
       }
-      return true;
-    },
-
-    isWord: function(string) {
-      return (string in dict);
     }
-  };
+
+    return trie;
+  })(wordlist);
+
+};
+
+Trie.prototype.isPrefix = function(string) {
+  var currentLeaf = this.tree;
+  var currentLetter;
+
+  for (i = 0; i < string.length; i++) {
+    currentLetter = string[i];
+    if (!currentLeaf[currentLetter]) return false;
+
+    currentLeaf = currentLeaf[currentLetter];
+  }
+
+  return true;
+};
+
+Trie.prototype.isWord = function(string) {
+  return !!(this.wordlist[string])
 };
 
 module.exports = Trie;
